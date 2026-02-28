@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habit Tracker - Authentication</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Sora:wght@400;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #00d4ff;
+            --primary-dark: #0099cc;
+            --secondary: #6366f1;
+            --accent: #f97316;
+            --dark-bg: #0a0e27;
+            --dark-surface: #1a1f3a;
+            --dark-surface-light: #242d4a;
+            --text-primary: #f5f7fa;
+            --text-secondary: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, #2a334b 50%, #625c6a 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(153, 167, 170, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 80% 20%, rgba(199, 199, 222, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 40% 40%, rgba(158, 151, 146, 0.05) 0%, transparent 40%);
+            pointer-events: none;
+            z-index: -1;
+            animation: gradientShift 15s ease-in-out infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Auth Card */
+        .auth-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1.5px solid rgba(0, 212, 255, 0.2);
+            padding: 50px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 500px;
+            animation: slideUp 0.8s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: all 0.4s;
+        }
+
+        .auth-card:hover::before {
+            opacity: 1;
+            top: -25%;
+            right: -25%;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Logo */
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .auth-logo-icon {
+            font-size: 3.5em;
+            margin-bottom: 15px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .auth-logo h1 {
+            font-family: 'Sora', sans-serif;
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .auth-logo p {
+            color: var(--text-secondary);
+            font-size: 0.95em;
+        }
+
+        /* Form Group */
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1.5px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .form-group input:invalid:not(:placeholder-shown) {
+            border-color: var(--danger);
+        }
+
+        .form-error {
+            color: var(--danger);
+            font-size: 0.85em;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .form-error.show {
+            display: block;
+            animation: shake 0.4s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1em;
+            transition: all 0.3s;
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: left 0.3s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0, 212, 255, 0.4);
+        }
+
+        .submit-btn:hover::before {
+            left: 100%;
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Form Footer */
+        .form-footer {
+            text-align: center;
+            color: var(--text-secondary);
+            position: relative;
+            z-index: 1;
+        }
+
+        .form-footer p {
+            font-size: 0.9em;
+        }
+
+        .form-footer a,
+        .form-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .form-footer a:hover,
+        .form-link:hover {
+            color: var(--secondary);
+            text-decoration: underline;
+        }
+
+        /* View Switcher */
+        .view {
+            display: none;
+            animation: fadeInView 0.5s ease-out;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeInView {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Back Button */
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+            position: relative;
+            z-index: 1;
+        }
+
+        .back-btn:hover {
+            gap: 12px;
+            color: var(--secondary);
+        }
+
+        /* Success Message */
+        .success-message {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1.5px solid rgba(16, 185, 129, 0.5);
+            color: var(--success);
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+            position: relative;
+            z-index: 1;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Password Strength Indicator */
+        .password-strength {
+            margin-top: 10px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            display: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .password-strength.show {
+            display: block;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--danger) 0%, var(--warning) 50%, var(--success) 100%);
+            transition: width 0.3s;
+        }
+
+        /* Dashboard View */
+        .dashboard-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1.5px solid rgba(0, 212, 255, 0.2);
+            padding: 50px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 600px;
+            animation: slideUp 0.8s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .dashboard-header h1 {
+            font-family: 'Sora', sans-serif;
+            font-size: 2em;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logout-btn {
+            padding: 10px 25px;
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.3s;
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(239, 68, 68, 0.4);
+        }
+
+        .user-info {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .user-info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+        }
+
+        .user-info-item:last-child {
+            border-bottom: none;
+        }
+
+        .user-info-label {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .user-info-value {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .action-btn {
+            padding: 15px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1.5px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            color: var(--primary);
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.85em;
+        }
+
+        .action-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .auth-card,
+            .dashboard-container {
+                padding: 30px;
+            }
+
+            .auth-logo h1 {
+                font-size: 1.8em;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Input icons animation */
+        .input-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary);
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+
+        .form-group {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login View -->
+        <div id="loginView" class="view active">
+            <button class="back-btn" onclick="goHome()" style="display: none;" id="loginBackBtn">
+                ← Back
+            </button>
+
+            <div class="auth-card">
+                <div class="auth-logo">
+                    <div class="auth-logo-icon">🔐</div>
+                    <h1>Welcome Back</h1>
+                    <p>Sign in to continue your habit journey</p>
+                </div>
+
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="success-message" id="loginSuccess">
+                        ✓ Login successful! Redirecting...
+                    </div>
+
+                    <div class="form-group">
+                        <label for="loginEmail">Email Address</label>
+                        <input type="email" id="loginEmail" name="email" placeholder="you@example.com" required>
+                        <div class="form-error" id="loginEmailError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" name="password" placeholder="••••••••" required>
+                        <div class="form-error" id="loginPasswordError"></div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Sign In</button>
+
+                    <div class="form-footer">
+                        <p>Don't have an account? <a onclick="switchView('signupView')">Sign Up</a></p>
+                        <p><a onclick="switchView('forgotView')" style="font-size: 0.85em;">Forgot Password?</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Signup View -->
+        <div id="signupView" class="view">
+            <button class="back-btn" onclick="switchView('loginView')">
+                ← Back to Login
+            </button>
+
+            <div class="auth-card">
+                <div class="auth-logo">
+                    <div class="auth-logo-icon">✨</div>
+                    <h1>Create Account</h1>
+                    <p>Start tracking your habits today</p>
+                </div>
+
+                <form id="signupForm" onsubmit="handleSignup(event)">
+                    <div class="success-message" id="signupSuccess">
+                        ✓ Account created! Signing you in...
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signupName">Full Name</label>
+                        <input type="text" id="signupName" name="name" placeholder="John Doe" required>
+                        <div class="form-error" id="signupNameError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signupEmail">Email Address</label>
+                        <input type="email" id="signupEmail" name="email" placeholder="you@example.com" required>
+                        <div class="form-error" id="signupEmailError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signupPassword">Password</label>
+                        <input type="password" id="signupPassword" name="password" placeholder="••••••••" required oninput="checkPasswordStrength()">
+                        <div class="password-strength" id="passwordStrength">
+                            <div class="password-strength-bar" id="passwordStrengthBar"></div>
+                        </div>
+                        <div class="form-error" id="signupPasswordError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signupConfirm">Confirm Password</label>
+                        <input type="password" id="signupConfirm" name="confirm" placeholder="••••••••" required>
+                        <div class="form-error" id="signupConfirmError"></div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Create Account</button>
+
+                    <div class="form-footer">
+                        <p>Already have an account? <a onclick="switchView('loginView')">Sign In</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Forgot Password View -->
+        <div id="forgotView" class="view">
+            <button class="back-btn" onclick="switchView('loginView')">
+                ← Back to Login
+            </button>
+
+            <div class="auth-card">
+                <div class="auth-logo">
+                    <div class="auth-logo-icon">🔑</div>
+                    <h1>Reset Password</h1>
+                    <p>We'll send you a link to reset your password</p>
+                </div>
+
+                <form id="forgotForm" onsubmit="handleForgot(event)">
+                    <div class="success-message" id="forgotSuccess">
+                        ✓ Check your email for password reset link!
+                    </div>
+
+                    <div class="form-group">
+                        <label for="forgotEmail">Email Address</label>
+                        <input type="email" id="forgotEmail" name="email" placeholder="you@example.com" required>
+                        <div class="form-error" id="forgotEmailError"></div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Send Reset Link</button>
+
+                    <div class="form-footer">
+                        <p>Remember your password? <a onclick="switchView('loginView')">Sign In</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Dashboard View (After Login) -->
+        <div id="dashboardView" class="view">
+            <div class="dashboard-container">
+                <div class="dashboard-header">
+                    <h1>Dashboard</h1>
+                    <button class="logout-btn" onclick="handleLogout()">Logout</button>
+                </div>
+
+                <div class="user-info">
+                    <div class="user-info-item">
+                        <span class="user-info-label">Name</span>
+                        <span class="user-info-value" id="dashboardName">-</span>
+                    </div>
+                    <div class="user-info-item">
+                        <span class="user-info-label">Email</span>
+                        <span class="user-info-value" id="dashboardEmail">-</span>
+                    </div>
+                    <div class="user-info-item">
+                        <span class="user-info-label">Member Since</span>
+                        <span class="user-info-value" id="dashboardDate">-</span>
+                    </div>
+                    <div class="user-info-item">
+                        <span class="user-info-label">Status</span>
+                        <span class="user-info-value" id="dashboardStatus">Active ✓</span>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="goToTracker()">Open Tracker</button>
+                    <button class="action-btn" onclick="handleChangePassword()">Change Password</button>
+                    <button class="action-btn" onclick="handleEditProfile()">Edit Profile</button>
+                    <button class="action-btn" onclick="handleDeleteAccount()">Delete Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // User Database (In-memory, but in real app would be backend)
+        const usersDB = JSON.parse(localStorage.getItem('habitTrackerUsers')) || {};
+        const currentSession = JSON.parse(localStorage.getItem('habitTrackerSession')) || null;
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            if (currentSession && usersDB[currentSession.email]) {
+                showDashboard();
+            }
+        });
+
+        // View Switcher
+        function switchView(viewId) {
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
+            document.getElementById(viewId).classList.add('active');
+        }
+
+        // Handle Login
+        function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            // Validation
+            if (!email || !password) {
+                showError('loginEmailError', 'Please fill all fields');
+                return;
+            }
+
+            // Check if user exists
+            if (!usersDB[email]) {
+                showError('loginEmailError', 'Email not found');
+                return;
+            }
+
+            // Check password
+            if (usersDB[email].password !== hashPassword(password)) {
+                showError('loginPasswordError', 'Incorrect password');
+                return;
+            }
+
+            // Success
+            showSuccess('loginSuccess', 'Login successful!');
+            setTimeout(() => {
+                const session = {
+                    email: email,
+                    name: usersDB[email].name,
+                    loginTime: new Date().toISOString()
+                };
+                localStorage.setItem('habitTrackerSession', JSON.stringify(session));
+                showDashboard();
+            }, 1500);
+        }
+
+        // Handle Signup
+        function handleSignup(event) {
+            event.preventDefault();
+            const name = document.getElementById('signupName').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const confirm = document.getElementById('signupConfirm').value;
+
+            // Validation
+            if (!name || !email || !password || !confirm) {
+                showError('signupNameError', 'Please fill all fields');
+                return;
+            }
+
+            if (name.length < 3) {
+                showError('signupNameError', 'Name must be at least 3 characters');
+                return;
+            }
+
+            if (password.length < 8) {
+                showError('signupPasswordError', 'Password must be at least 8 characters');
+                return;
+            }
+
+            if (password !== confirm) {
+                showError('signupConfirmError', 'Passwords do not match');
+                return;
+            }
+
+            if (usersDB[email]) {
+                showError('signupEmailError', 'Email already registered');
+                return;
+            }
+
+            // Create user
+            usersDB[email] = {
+                name: name,
+                email: email,
+                password: hashPassword(password),
+                createdAt: new Date().toISOString()
+            };
+
+            localStorage.setItem('habitTrackerUsers', JSON.stringify(usersDB));
+
+            // Success
+            showSuccess('signupSuccess', 'Account created successfully!');
+            setTimeout(() => {
+                const session = {
+                    email: email,
+                    name: name,
+                    loginTime: new Date().toISOString()
+                };
+                localStorage.setItem('habitTrackerSession', JSON.stringify(session));
+                showDashboard();
+            }, 1500);
+        }
+
+        // Handle Forgot Password
+        function handleForgot(event) {
+            event.preventDefault();
+            const email = document.getElementById('forgotEmail').value.trim();
+
+            if (!email) {
+                showError('forgotEmailError', 'Please enter your email');
+                return;
+            }
+
+            if (!usersDB[email]) {
+                showError('forgotEmailError', 'Email not found');
+                return;
+            }
+
+            // In real app, send email here
+            showSuccess('forgotSuccess', 'Password reset email sent!');
+            setTimeout(() => {
+                switchView('loginView');
+                document.getElementById('forgotForm').reset();
+            }, 2000);
+        }
+
+        // Show Dashboard
+        function showDashboard() {
+            const session = JSON.parse(localStorage.getItem('habitTrackerSession'));
+            const user = usersDB[session.email];
+
+            document.getElementById('dashboardName').textContent = user.name;
+            document.getElementById('dashboardEmail').textContent = user.email;
+            document.getElementById('dashboardDate').textContent = new Date(user.createdAt).toLocaleDateString();
+
+            switchView('dashboardView');
+        }
+
+        // Handle Logout
+        function handleLogout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('habitTrackerSession');
+                document.getElementById('loginForm').reset();
+                document.getElementById('signupForm').reset();
+                switchView('loginView');
+            }
+        }
+
+        // Handle Change Password
+        function handleChangePassword() {
+            const newPassword = prompt('Enter new password (min 8 characters):');
+            if (!newPassword) return;
+
+            if (newPassword.length < 8) {
+                alert('Password must be at least 8 characters');
+                return;
+            }
+
+            const session = JSON.parse(localStorage.getItem('habitTrackerSession'));
+            usersDB[session.email].password = hashPassword(newPassword);
+            localStorage.setItem('habitTrackerUsers', JSON.stringify(usersDB));
+            alert('Password changed successfully!');
+        }
+
+        // Handle Edit Profile
+        function handleEditProfile() {
+            const session = JSON.parse(localStorage.getItem('habitTrackerSession'));
+            const newName = prompt('Enter new name:', usersDB[session.email].name);
+            
+            if (newName && newName.trim().length >= 3) {
+                usersDB[session.email].name = newName.trim();
+                session.name = newName.trim();
+                localStorage.setItem('habitTrackerUsers', JSON.stringify(usersDB));
+                localStorage.setItem('habitTrackerSession', JSON.stringify(session));
+                document.getElementById('dashboardName').textContent = newName.trim();
+                alert('Profile updated successfully!');
+            }
+        }
+
+        // Handle Delete Account
+        function handleDeleteAccount() {
+            if (confirm('Are you sure? This action cannot be undone.')) {
+                if (confirm('This will permanently delete your account and all data. Continue?')) {
+                    const session = JSON.parse(localStorage.getItem('habitTrackerSession'));
+                    delete usersDB[session.email];
+                    localStorage.setItem('habitTrackerUsers', JSON.stringify(usersDB));
+                    localStorage.removeItem('habitTrackerSession');
+                    alert('Account deleted successfully');
+                    switchView('loginView');
+                }
+            }
+        }
+
+        // Go to Tracker
+        function goToTracker() {
+    window.location.href = "habit2.html";
+}
+
+        // Go Home
+        function goHome() {
+            switchView('loginView');
+        }
+
+        // Utilities
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.classList.add('show');
+        }
+
+        function showSuccess(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = '✓ ' + message;
+            element.classList.add('show');
+        }
+
+        function checkPasswordStrength() {
+            const password = document.getElementById('signupPassword').value;
+            const strengthBar = document.getElementById('passwordStrengthBar');
+            const strengthDiv = document.getElementById('passwordStrength');
+
+            if (password.length === 0) {
+                strengthDiv.classList.remove('show');
+                return;
+            }
+
+            strengthDiv.classList.add('show');
+
+            let strength = 0;
+            if (password.length >= 8) strength += 25;
+            if (password.length >= 12) strength += 25;
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength += 25;
+            if (/[0-9]/.test(password)) strength += 12.5;
+            if (/[^a-zA-Z0-9]/.test(password)) strength += 12.5;
+
+            strengthBar.style.width = Math.min(strength, 100) + '%';
+        }
+
+        function hashPassword(password) {
+            // Simple hash for demo (in real app use bcrypt or similar on backend)
+            return btoa(password);
+        }
+    </script>
+</body>
+</html>
